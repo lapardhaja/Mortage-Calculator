@@ -1,9 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// GitHub Pages project site / custom path — must match the URL segment after your domain
-// https://lapardhaja.com/Mortage-Calculator/
+/** GitHub Actions sets GITHUB_REPOSITORY=owner/repo — Pages is always /repo/ for project sites */
+function pagesBase() {
+  const repo = process.env.GITHUB_REPOSITORY?.split("/")[1];
+  if (repo) return `/${repo}/`;
+  return "/Mortage-Calculator/";
+}
+
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: mode === "production" ? "/Mortage-Calculator/" : "/",
+  base: mode === "production" ? pagesBase() : "/",
 }));
