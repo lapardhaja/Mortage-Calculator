@@ -290,9 +290,10 @@ export default function App() {
   const [pdfStatus, setPdfStatus] = useState("idle"); // idle | generating | done | error
   const [pdfMsg,    setPdfMsg]    = useState("");
 
-  const [colorMode, setColorMode] = useState(() =>
-    typeof window !== "undefined" && localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark"
-  );
+  const [colorMode, setColorMode] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return localStorage.getItem(THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
+  });
   useEffect(() => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, colorMode);
