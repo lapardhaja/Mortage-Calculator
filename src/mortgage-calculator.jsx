@@ -237,9 +237,9 @@ function NumInput({ label, value, onDec, onInc, onChange, min, max, step, slider
 function MonthYearPicker({ label, year, month, onChange, minYear, maxYear, color="#38bdf8", comfortable=false }) {
   const years = [];
   for (let y = minYear; y <= maxYear; y++) years.push(y);
-  const lab = comfortable ? 11 : 9;
-  const sel = comfortable ? 14 : 12;
-  const pad = comfortable ? "8px 6px" : "6px 4px";
+  const lab = comfortable ? 12 : 10;
+  const sel = comfortable ? 15 : 13;
+  const pad = comfortable ? "10px 8px" : "7px 5px";
   return (
     <div style={{ flex:1 }}>
       <div style={{ fontSize:lab, letterSpacing:"0.15em", color:"var(--mc-text-muted)", textTransform:"uppercase", marginBottom:5 }}>{label}</div>
@@ -749,7 +749,7 @@ export default function App() {
         {/* TABS */}
         <div className="scrollx" style={{ display:"flex",gap:6,marginBottom:10,paddingBottom:2 }}>
           {["Summary","Chart","Schedule"].map(v=>(
-            <button key={v} onClick={()=>setView(v.toLowerCase())} style={{ ...pillStyle(view===v.toLowerCase()), ...(isComfortable?{ fontSize:12, padding:"10px 22px" }:{}) , ...(!isWideLayout?{ padding:"10px 20px" }:{}) }}>{v}</button>
+            <button key={v} onClick={()=>setView(v.toLowerCase())} style={{ ...pillStyle(view===v.toLowerCase()), ...(isComfortable?{ fontSize:13, padding:"11px 24px" }:{}) , ...(!isWideLayout?{ padding:"10px 20px" }:{}) }}>{v}</button>
           ))}
         </div>
 
@@ -889,17 +889,17 @@ export default function App() {
 
         {/* ── SCHEDULE ── */}
         {view==="schedule" && (
-          <div className="fade-in" style={{ background:"#0f172a",border:"1px solid #1e293b",borderRadius:16,overflow:"hidden" }}>
-            <div style={{ padding:"13px 14px",borderBottom:"1px solid #1e293b" }}>
-              <div style={{ fontSize:10,letterSpacing:"0.15em",color:"#64748b",textTransform:"uppercase" }}>Full Payment Schedule</div>
-              <div style={{ fontSize:11,color:"#334155",marginTop:2 }}>🟢 Green = extra payment month · 🔵 Blue = year-end</div>
+          <div className="fade-in" style={{ background:"var(--mc-schedule-outer)",border:"1px solid var(--mc-border)",borderRadius:16,overflow:"hidden" }}>
+            <div style={{ padding:isComfortable?"15px 16px":"13px 14px",borderBottom:"1px solid var(--mc-border)" }}>
+              <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Full Payment Schedule</div>
+              <div style={{ fontSize:isComfortable?12:11,color:"var(--mc-text-arrow)",marginTop:2 }}>🟢 Green = extra payment month · 🔵 Blue = year-end</div>
             </div>
             <div style={{ maxHeight:420,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch" }}>
-              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:isComfortable?13:11,minWidth:340,fontFamily:"'DM Mono',monospace" }}>
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:isComfortable?14:12,minWidth:340,fontFamily:"'DM Mono',monospace" }}>
                 <thead>
-                  <tr style={{ background:"#080d17",position:"sticky",top:0 }}>
+                  <tr style={{ background:"var(--mc-schedule-head)",position:"sticky",top:0 }}>
                     {["Date","Base","Principal","Interest","Extra","Balance"].map(h=>(
-                      <th key={h} style={{ padding:"9px 9px",textAlign:"right",color:"#475569",fontWeight:400,fontSize:isComfortable?10:9,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>{h}</th>
+                      <th key={h} style={{ padding:"9px 9px",textAlign:"right",color:"var(--mc-text-dim)",fontWeight:400,fontSize:isComfortable?11:9,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -907,15 +907,16 @@ export default function App() {
                   {withExtra.schedule.map((row,i)=>{
                     const isYE=row.month%12===0, hasE=row.extra>0;
                     const rowDate=absMonthToDate(row.month,startYear,startMonth+1);
+                    const zebraBg = isLight ? (i % 2 === 0 ? "#ffffff" : "#f8fafc") : i % 2 === 0 ? "#0f172a" : "#0a1020";
                     return (
                       <tr key={row.month} className={isYE?"row-year":hasE?"row-extra":""}
-                        style={{ background:isYE?"#0c1829":hasE?"#0a1f0f":i%2===0?"#0f172a":"#0a1020" }}>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:isYE?"#38bdf8":hasE?"#10b981":"#475569",fontSize:10 }}>{MONTHS_SHORT[rowDate.month]} {rowDate.year}{isYE?" ★":""}</td>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:"#94a3b8" }}>{fmt(base.pmt)}</td>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:"#38bdf8" }}>{fmt(row.principal)}</td>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:"#ef4444" }}>{fmt(row.interest)}</td>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:hasE?"#10b981":"#334155",fontWeight:hasE?700:400 }}>{hasE?fmt(row.extra):"—"}</td>
-                        <td style={{ padding:"7px 9px",textAlign:"right",color:"#e2e8f0",fontWeight:row.balance===0?700:400 }}>{row.balance===0?"🎉 $0":fmt(row.balance)}</td>
+                        style={isYE || hasE ? {} : { background: zebraBg }}>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:isYE?"#38bdf8":hasE?"#10b981":"var(--mc-text-dim)",fontSize:isComfortable?11:10 }}>{MONTHS_SHORT[rowDate.month]} {rowDate.year}{isYE?" ★":""}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text-secondary)" }}>{fmt(base.pmt)}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#38bdf8" }}>{fmt(row.principal)}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#ef4444" }}>{fmt(row.interest)}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:hasE?"#10b981":"var(--mc-text-arrow)",fontWeight:hasE?700:400 }}>{hasE?fmt(row.extra):"—"}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text)",fontWeight:row.balance===0?700:400 }}>{row.balance===0?"🎉 $0":fmt(row.balance)}</td>
                       </tr>
                     );
                   })}
@@ -925,7 +926,7 @@ export default function App() {
           </div>
         )}
 
-        <div style={{ textAlign:"center",marginTop:16,fontSize:10,color:"#1e293b" }}>
+        <div style={{ textAlign:"center",marginTop:16,fontSize:isComfortable?11:10,color:"var(--mc-footer)" }}>
           Estimates only · Results vary by lender terms and payment timing
         </div>
       </div>
