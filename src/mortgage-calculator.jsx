@@ -35,6 +35,17 @@ function dateToAbsMonth(year, month, startYear, startMonth) {
   return (year - startYear) * 12 + (month - startMonth + 1);
 }
 
+/** e.g. 107 → "8 years 11 months" */
+function formatYearsMonths(totalMonths) {
+  const y = Math.floor(totalMonths / 12);
+  const m = totalMonths % 12;
+  const parts = [];
+  if (y > 0) parts.push(`${y} year${y === 1 ? "" : "s"}`);
+  if (m > 0) parts.push(`${m} month${m === 1 ? "" : "s"}`);
+  if (parts.length === 0) return "0 months";
+  return parts.join(" ");
+}
+
 // ─── Amortization Engine ─────────────────────────────────────────────────────
 function computeAmortization(principal, annualRate, termYears, periods = []) {
   const r   = annualRate / 100 / 12;
@@ -325,6 +336,7 @@ export default function App() {
   const savedMoR   = savedMo%12;
   const totalExtra = withExtra.schedule.reduce((s,r)=>s+r.extra,0);
   const payoffDate = absMonthToDate(withExtra.months, startYear, startMonth+1);
+  const payoffDurationLabel = formatYearsMonths(withExtra.months);
 
   const rollup = sched => {
     const y={};
@@ -569,8 +581,13 @@ export default function App() {
             )}
             <div style={{ flex:isWideLayout?1:"none",display:"flex",flexDirection:"column" }}>
               <div style={{ fontSize:isComfortable?10:9,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:5 }}>Payoff Date</div>
-              <div style={{ background:"var(--mc-well)",border:"1px solid #10b98133",borderRadius:7,padding:isComfortable?"11px 14px":"8px 11px",fontSize:isComfortable?17:14,fontWeight:700,color:"#10b981",fontFamily:"'DM Mono',monospace" }}>
-                {MONTHS_SHORT[payoffDate.month]} {payoffDate.year}
+              <div style={{ background:"var(--mc-well)",border:"1px solid #10b98133",borderRadius:7,padding:isComfortable?"11px 14px":"8px 11px" }}>
+                <div style={{ fontSize:isComfortable?17:14,fontWeight:700,color:"#10b981",fontFamily:"'DM Mono',monospace" }}>
+                  {MONTHS_SHORT[payoffDate.month]} {payoffDate.year}
+                </div>
+                <div style={{ marginTop:4,fontSize:isComfortable?13:11,fontWeight:500,color:"var(--mc-text-dim)",fontFamily:"inherit" }}>
+                  {payoffDurationLabel}
+                </div>
               </div>
             </div>
           </div>
@@ -719,7 +736,7 @@ export default function App() {
             {[
               {label:"Interest Saved",val:fmt(savedInt),                                   color:"#10b981"},
               {label:"Time Saved",    val:`${savedY}y ${savedMoR}m`,                       color:"#f59e0b"},
-              {label:"Payoff Date",   val:`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year}`, color:"#38bdf8"},
+              {label:"Payoff Date",   val:`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color:"#38bdf8"},
             ].map(({label,val,color})=>(
               <div key={label}>
                 <div style={{ fontSize:isComfortable?12:9,color:"var(--mc-text-muted)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4 }}>{label}</div>
@@ -733,7 +750,7 @@ export default function App() {
         <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr":"1fr",gap:8,marginBottom:8 }}>
           {[
             {label:"Without Extra",color:"#ef4444",rows:[["Monthly",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(base.pmt*base.months)],["Payoff",`${term} yrs`]]},
-            {label:"With Periods", color:"#10b981",rows:[["Base Pmt",fmt(base.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year}`]]},
+            {label:"With Periods", color:"#10b981",rows:[["Base Pmt",fmt(base.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]]},
           ].map(({label,color,rows})=>(
             <div key={label} style={{ background:"var(--mc-compare-surface)",border:`1px solid ${color}28`,borderTop:`3px solid ${color}`,borderRadius:13,padding:isComfortable?"18px 16px":"14px 12px" }}>
               <div style={{ fontSize:isComfortable?12:9,letterSpacing:"0.15em",color,textTransform:"uppercase",marginBottom:10,fontWeight:600 }}>{label}</div>

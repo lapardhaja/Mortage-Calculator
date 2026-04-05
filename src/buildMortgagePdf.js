@@ -8,6 +8,16 @@ function absMonthToDate(absMonth, startYear, startMonth1) {
   return { year: startYear + Math.floor(totalM / 12), month: totalM % 12 };
 }
 
+function formatYearsMonths(totalMonths) {
+  const y = Math.floor(totalMonths / 12);
+  const m = totalMonths % 12;
+  const parts = [];
+  if (y > 0) parts.push(`${y} year${y === 1 ? "" : "s"}`);
+  if (m > 0) parts.push(`${m} month${m === 1 ? "" : "s"}`);
+  if (parts.length === 0) return "0 months";
+  return parts.join(" ");
+}
+
 function fmt(n) {
   return "$" + Math.round(n).toLocaleString("en-US");
 }
@@ -37,9 +47,9 @@ export function downloadMortgagePdf(p) {
   } = p;
 
   const startLabel = `${MONTHS[startMonth]} ${startYear}`;
-  const payoffLabel = `${MONTHS[payoffDate.month]} ${payoffDate.year}`;
+  const payoffLabel = `${MONTHS[payoffDate.month]} ${payoffDate.year} (${formatYearsMonths(withExtra.months)})`;
   const basePayoff = absMonthToDate(base.months, startYear, startMonth + 1);
-  const basePayoffLabel = `${MONTHS[basePayoff.month]} ${basePayoff.year}`;
+  const basePayoffLabel = `${MONTHS[basePayoff.month]} ${basePayoff.year} (${formatYearsMonths(base.months)})`;
   const roi = totalExtra > 0 ? ((savedInt / totalExtra) * 100).toFixed(0) : "0";
   const termActual = `${Math.floor(withExtra.months / 12)}y ${withExtra.months % 12}m`;
   const totalPaidWithExtra = base.pmt * withExtra.months + totalExtra;
