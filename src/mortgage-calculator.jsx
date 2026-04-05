@@ -282,14 +282,37 @@ export default function App() {
   const [startYear,  setStartYear]  = useState(now.getFullYear());
   const [startMonth, setStartMonth] = useState(now.getMonth());
 
-  // Purchase + down payment
-  const [purchasePrice, setPurchasePrice] = useState(540000);
+  // Purchase + down payment (pct and dollar stay in sync when either is edited)
+  const [purchasePrice, setPurchasePrice] = useState(500000);
   const [downMode,      setDownMode]      = useState("pct");
-  const [downPct,       setDownPct]       = useState(13);
-  const [downDollar,    setDownDollar]    = useState(70200);
+  const [downPct,       setDownPct]       = useState(20);
+  const [downDollar,    setDownDollar]    = useState(100000);
 
-  const downAmount  = downMode==="pct" ? Math.round(purchasePrice*downPct/100) : downDollar;
-  const downPercent = downMode==="dollar" ? parseFloat(((downDollar/purchasePrice)*100).toFixed(1)) : downPct;
+  const syncDownFromPct = useCallback((pct) => {
+    const p = Math.max(0, Math.min(99, Math.round(pct)));
+    setDownPct(p);
+    setDownDollar(Math.round((purchasePrice * p) / 100));
+  }, [purchasePrice]);
+
+  const syncDownFromDollar = useCallback((d) => {
+    const max = purchasePrice;
+    const dd = Math.max(0, Math.min(max, d));
+    setDownDollar(dd);
+    if (max <= 0) {
+      setDownPct(0);
+      return;
+    }
+    setDownPct(parseFloat(((dd / max) * 100).toFixed(1)));
+  }, [purchasePrice]);
+
+  const downPctRef = useRef(downPct);
+  downPctRef.current = downPct;
+  useEffect(() => {
+    setDownDollar(Math.round((purchasePrice * downPctRef.current) / 100));
+  }, [purchasePrice]);
+
+  const downAmount  = Math.round((purchasePrice * downPct) / 100);
+  const downPercent = purchasePrice > 0 ? parseFloat(((downDollar / purchasePrice) * 100).toFixed(1)) : 0;
   const principal   = Math.max(0, purchasePrice - downAmount);
 
   const [rate,      setRate]      = useState(5.5);
@@ -571,7 +594,7 @@ export default function App() {
           <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10 }}>Loan Start Date</div>
           <div style={{ display:"flex", flexDirection:isWideLayout?"row":"column", gap:8 }}>
             <MonthYearPicker label="Month" year={startYear} month={startMonth}
-              onChange={(y,m)=>{setStartYear(y);setStartMonth(m);}} minYear={2010} maxYear={2035} color="#38bdf8" comfortable={isComfortable}/>
+              onChange={(y,m)=>{setStartYear(y);setStartMonth(m);}} minYear={now.getFullYear()-50} maxYear={now.getFullYear()+40} color="#38bdf8" comfortable={isComfortable}/>
             {isWideLayout ? (
               <div style={{ display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 4px" }}>
                 <div style={{ fontSize:10,color:"var(--mc-text-arrow)",marginBottom:8 }}>→</div>
@@ -612,7 +635,11 @@ export default function App() {
               <span style={{ fontSize:isComfortable?10:9,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Down Payment</span>
               <div style={{ display:"flex",background:"var(--mc-well)",borderRadius:8,padding:2,gap:2 }}>
                 {[["pct","%"],["dollar","$"]].map(([mode,lbl])=>(
-                  <button key={mode} onClick={()=>setDownMode(mode)} style={{ padding:isComfortable?"6px 14px":"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:isComfortable?12:11,fontWeight:600,fontFamily:"inherit",touchAction:"manipulation",background:downMode===mode?"#38bdf8":"transparent",color:downMode===mode?"var(--mc-pill-active-fg)":"var(--mc-text-dim)",transition:"all 0.2s" }}>{lbl}</button>
+                  <button key={mode} onClick={()=>{
+                    if (mode==="pct") syncDownFromPct(Math.round(downPct));
+                    else syncDownFromDollar(Math.round((purchasePrice * downPct) / 100));
+                    setDownMode(mode);
+                  }} style={{ padding:isComfortable?"6px 14px":"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:isComfortable?12:11,fontWeight:600,fontFamily:"inherit",touchAction:"manipulation",background:downMode===mode?"#38bdf8":"transparent",color:downMode===mode?"var(--mc-pill-active-fg)":"var(--mc-text-dim)",transition:"all 0.2s" }}>{lbl}</button>
                 ))}
               </div>
             </div>
@@ -621,16 +648,16 @@ export default function App() {
               <NumInput
                 label={`${downPct}% = ${fmt(downAmount)}`} value={downPct} prefix="" suffix="%" decimals={0}
                 min={0} max={99} step={1} sliderColor="#10b981" comfortable={isComfortable}
-                onDec={()=>setDownPct(v=>Math.max(0,v-1))}
-                onInc={()=>setDownPct(v=>Math.min(99,v+1))}
-                onChange={v=>setDownPct(Math.round(v))}/>
+                onDec={()=>syncDownFromPct(downPct-1)}
+                onInc={()=>syncDownFromPct(downPct+1)}
+                onChange={v=>syncDownFromPct(v)}/>
             ) : (
               <NumInput
                 label={`${fmt(downDollar)} = ${downPercent}%`} value={downDollar} prefix="$" min={0} max={purchasePrice} step={5000}
                 sliderColor="#10b981" comfortable={isComfortable}
-                onDec={()=>setDownDollar(v=>Math.max(0,v-5000))}
-                onInc={()=>setDownDollar(v=>Math.min(purchasePrice,v+5000))}
-                onChange={v=>setDownDollar(Math.round(v/1000)*1000)}/>
+                onDec={()=>syncDownFromDollar(downDollar-5000)}
+                onInc={()=>syncDownFromDollar(downDollar+5000)}
+                onChange={v=>syncDownFromDollar(Math.round(v/1000)*1000)}/>
             )}
           </div>
 
