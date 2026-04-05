@@ -307,11 +307,26 @@ export default function App() {
 
   const downPctRef = useRef(downPct);
   downPctRef.current = downPct;
+  const downDollarRef = useRef(downDollar);
+  downDollarRef.current = downDollar;
+  const downModeRef = useRef(downMode);
+  downModeRef.current = downMode;
   useEffect(() => {
+    if (downModeRef.current === "dollar") {
+      const max = purchasePrice;
+      const dd = Math.max(0, Math.min(max, downDollarRef.current));
+      setDownDollar(dd);
+      if (max <= 0) setDownPct(0);
+      else setDownPct(parseFloat(((dd / max) * 100).toFixed(1)));
+      return;
+    }
     setDownDollar(Math.round((purchasePrice * downPctRef.current) / 100));
   }, [purchasePrice]);
 
-  const downAmount  = Math.round((purchasePrice * downPct) / 100);
+  const downAmount =
+    downMode === "dollar"
+      ? Math.round(downDollar)
+      : Math.round((purchasePrice * downPct) / 100);
   const downPercent = purchasePrice > 0 ? parseFloat(((downDollar / purchasePrice) * 100).toFixed(1)) : 0;
   const principal   = Math.max(0, purchasePrice - downAmount);
 
