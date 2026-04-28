@@ -373,6 +373,12 @@ export default function App() {
   }, [colorMode]);
   const isLight = colorMode === "light";
 
+  const isWideLayout = useMediaQuery("(min-width: 640px)");
+  const isComfortable = useMediaQuery("(min-width: 820px)");
+  const shellMax = isComfortable ? 1080 : 800;
+  const padX = isWideLayout ? 12 : "max(12px, env(safe-area-inset-left))";
+  const padXR = isWideLayout ? 12 : "max(12px, env(safe-area-inset-right))";
+
   /** Segmented control (tabs, payment frequency) */
   const segmentedBar = {
     display: "flex",
@@ -486,12 +492,6 @@ export default function App() {
     updPeriod(id,"toAbs",Math.max(periods.find(x=>x.id===id)?.fromAbs||1,Math.min(abs,totalMonths)));
   };
   const endYear  = startYear + Math.floor((startMonth+totalMonths)/12);
-
-  const isWideLayout = useMediaQuery("(min-width: 640px)");
-  const isComfortable = useMediaQuery("(min-width: 820px)");
-  const shellMax = isComfortable ? 1080 : 800;
-  const padX = isWideLayout ? 12 : "max(12px, env(safe-area-inset-left))";
-  const padXR = isWideLayout ? 12 : "max(12px, env(safe-area-inset-right))";
 
   const cardStyle = (ex = {}) => ({
     background: "var(--mc-surface)",
