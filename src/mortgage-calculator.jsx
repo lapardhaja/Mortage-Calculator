@@ -442,11 +442,16 @@ export default function App() {
     amount:p.amount,
   })),[periods,totalMonths]);
 
+  /** Standard monthly amortization, no extra principal (baseline for savings and charts). */
+  const baselineNoExtra = useMemo(
+    () => computeAmortization(principal, rate, term, [], "monthly"),
+    [principal, rate, term]
+  );
   const base      = useMemo(()=>computeAmortization(principal,rate,term,[],paymentMode),            [principal,rate,term,paymentMode]);
   const withExtra = useMemo(()=>computeAmortization(principal,rate,term,clampedPeriods,paymentMode),[principal,rate,term,clampedPeriods,paymentMode]);
 
-  const savedInt   = Math.round(base.totalInterest - withExtra.totalInterest);
-  const savedMo    = base.months - withExtra.months;
+  const savedInt   = Math.round(baselineNoExtra.totalInterest - withExtra.totalInterest);
+  const savedMo    = baselineNoExtra.months - withExtra.months;
   const savedY     = Math.floor(savedMo/12);
   const savedMoR   = savedMo%12;
   const totalExtra = withExtra.schedule.reduce((s,r)=>s+r.extra,0);
@@ -461,7 +466,7 @@ export default function App() {
     });
     return y;
   };
-  const yBase  = useMemo(()=>rollup(base.schedule),      [base]);
+  const yBase  = useMemo(()=>rollup(baselineNoExtra.schedule),      [baselineNoExtra]);
   const yExtra = useMemo(()=>rollup(withExtra.schedule),  [withExtra]);
   const years  = Array.from({length:term},(_,i)=>i+1);
   const totalWithExtra = totalScheduledCashOut(withExtra) + totalExtra;
@@ -537,6 +542,7 @@ export default function App() {
         payoffDate,
         periods,
         base,
+        baselineNoExtra,
         withExtra,
         savedInt,
         savedY,
@@ -855,9 +861,17 @@ export default function App() {
           </div>
           <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr 1fr":"1fr",gap:8 }}>
             {[
-              {label:"Interest vs baseline",val:fmt(savedInt),                                   color:"var(--mc-text)"},
-              {label:"Term vs baseline",    val:`${savedY}y ${savedMoR}m`,                       color:"var(--mc-text)"},
-              {label:"Projected payoff",   val:`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color:"var(--mc-text)"},
+              {
+                label: paymentMode === "biweekly" ? "Interest vs monthly, no extras" : "Interest vs baseline",
+                val: fmt(savedInt),
+                color: "var(--mc-text)",
+              },
+              {
+                label: paymentMode === "biweekly" ? "Term vs monthly, no extras" : "Term vs baseline",
+                val: `${savedY}y ${savedMoR}m`,
+                color: "var(--mc-text)",
+              },
+              { label: "Projected payoff", val: `${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color: "var(--mc-text)" },
             ].map(({label,val,color})=>(
               <div key={label}>
                 <div style={{ fontSize:isComfortable?12:9,color:"var(--mc-text-muted)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4 }}>{label}</div>
@@ -873,8 +887,8 @@ export default function App() {
             {
               label:"No extra principal",
               rows: paymentMode==="biweekly"
-                ? [["Equiv. P&I / month",fmt(base.scheduledMonthlyPI)],["Scheduled P&I (note)",fmt(base.pmt)],["Total interest",fmt(base.totalInterest)],["Total paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]]
-                : [["Monthly P&I",fmt(base.pmt)],["Total interest",fmt(base.totalInterest)],["Total paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]],
+                ? [["Monthly P&I (baseline)",fmt(baselineNoExtra.pmt)],["Total interest",fmt(baselineNoExtra.totalInterest)],["Total paid",fmt(totalScheduledCashOut(baselineNoExtra))],["Payoff",`${term} yrs`]]
+                : [["Monthly P&I",fmt(baselineNoExtra.pmt)],["Total interest",fmt(baselineNoExtra.totalInterest)],["Total paid",fmt(totalScheduledCashOut(baselineNoExtra))],["Payoff",`${term} yrs`]],
             },
             {
               label:"With extra principal",
@@ -916,7 +930,7 @@ export default function App() {
             {[25,50,75,100].map(pct=>{
               const tBal = principal*(1-pct/100);
               const mHit = withExtra.schedule.find(r=>r.balance<=tBal);
-              const bHit = base.schedule.find(r=>r.balance<=tBal);
+              const bHit = baselineNoExtra.schedule.find(r=>r.balance<=tBal);
               if(!mHit) return null;
               const hitDate = absMonthToDate(mHit.month,startYear,startMonth+1);
               const saved   = (bHit?Math.floor(bHit.month/12):term)-Math.floor(mHit.month/12);

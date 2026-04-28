@@ -40,6 +40,7 @@ export function downloadMortgagePdf(p) {
     payoffDate,
     periods,
     base,
+    baselineNoExtra,
     withExtra,
     savedInt,
     savedY,
@@ -48,13 +49,17 @@ export function downloadMortgagePdf(p) {
   } = p;
 
   const isBiweekly = paymentMode === "biweekly";
+  /** Level monthly amortization with no extra principal (comparison baseline). */
+  const baseline = baselineNoExtra ?? base;
+  const baselineScheduled = baseline.scheduledMonthlyPI ?? baseline.pmt;
   const baseScheduled = base.scheduledMonthlyPI ?? base.pmt;
   const withScheduled = withExtra.scheduledMonthlyPI ?? withExtra.pmt;
+  const baselineCashOut = baselineScheduled * baseline.months;
 
   const startLabel = `${MONTHS[startMonth]} ${startYear}`;
   const payoffLabel = `${MONTHS[payoffDate.month]} ${payoffDate.year} (${formatYearsMonths(withExtra.months)})`;
-  const basePayoff = absMonthToDate(base.months, startYear, startMonth + 1);
-  const basePayoffLabel = `${MONTHS[basePayoff.month]} ${basePayoff.year} (${formatYearsMonths(base.months)})`;
+  const basePayoff = absMonthToDate(baseline.months, startYear, startMonth + 1);
+  const basePayoffLabel = `${MONTHS[basePayoff.month]} ${basePayoff.year} (${formatYearsMonths(baseline.months)})`;
   const roi = totalExtra > 0 ? ((savedInt / totalExtra) * 100).toFixed(0) : "0";
   const termActual = `${Math.floor(withExtra.months / 12)}y ${withExtra.months % 12}m`;
   const totalPaidWithExtra = withScheduled * withExtra.months + totalExtra;
@@ -115,14 +120,15 @@ export function downloadMortgagePdf(p) {
   doc.text("Scenario comparison", margin, y);
   y += 14;
 
+  const compareLeftHead = isBiweekly ? "Monthly P&I, no extras" : "No extra payments";
   const compareBody = [
-    ["Total interest paid", fmt(base.totalInterest), fmt(withExtra.totalInterest)],
-    ["Total cash out (incl. extra principal)", fmt(baseScheduled * base.months), fmt(totalPaidWithExtra)],
+    ["Total interest paid", fmt(baseline.totalInterest), fmt(withExtra.totalInterest)],
+    ["Total cash out (incl. extra principal)", fmt(baselineCashOut), fmt(totalPaidWithExtra)],
     ["Extra principal paid", "—", fmt(totalExtra)],
     ["Payoff date", basePayoffLabel, payoffLabel],
-    ["Loan duration", `${term} y (${base.months} mo)`, `${termActual} (${withExtra.months} mo)`],
-    ["Interest saved vs no extras", "—", fmt(savedInt)],
-    ["Time saved", "—", `${savedY}y ${savedMoR}m`],
+    ["Loan duration", `${term} y (${baseline.months} mo)`, `${termActual} (${withExtra.months} mo)`],
+    ["Interest saved vs left column", "—", fmt(savedInt)],
+    ["Time saved vs left column", "—", `${savedY}y ${savedMoR}m`],
   ];
   if (totalExtra > 0) {
     compareBody.push(["Effective return on extra (saved interest / extra paid)", "—", `${roi}%`]);
@@ -130,7 +136,7 @@ export function downloadMortgagePdf(p) {
 
   autoTable(doc, {
     startY: y,
-    head: [["Metric", "No extra payments", "Your plan"]],
+    head: [["Metric", compareLeftHead, "Your plan"]],
     body: compareBody,
     theme: "striped",
     headStyles: { fillColor: cyan, textColor: [15, 23, 42], fontStyle: "bold" },
@@ -143,7 +149,7 @@ export function downloadMortgagePdf(p) {
     .map((pct) => {
       const targetBal = principal * (1 - pct / 100);
       const mHit = withExtra.schedule.find((r) => r.balance <= targetBal);
-      const bHit = base.schedule.find((r) => r.balance <= targetBal);
+      const bHit = baseline.schedule.find((r) => r.balance <= targetBal);
       if (!mHit) return null;
       const d = absMonthToDate(mHit.month, startYear, startMonth + 1);
       const saved = (bHit ? Math.floor(bHit.month / 12) : term) - Math.floor(mHit.month / 12);
@@ -280,11 +286,11 @@ export function downloadMortgagePdf(p) {
   doc.setFontSize(9);
   doc.setTextColor(51, 65, 85);
   const insightNoExtras = isBiweekly
-    ? `Biweekly frequency: scheduled P&I remains ${fmt(base.pmt)}/mo on the note; this report applies about ${fmt(baseScheduled)}/mo toward P&I with no extra principal. Total interest about ${fmt(base.totalInterest)} through payoff ${basePayoffLabel} (${base.months} months).`
-    : `Monthly P&I ${fmt(base.pmt)} with no extra principal: total interest about ${fmt(base.totalInterest)} through payoff ${basePayoffLabel} (${base.months} months).`;
+    ? `Biweekly plan: note payment ${fmt(base.pmt)}/mo; about ${fmt(baseScheduled)}/mo applied to P&I. Versus level monthly P&I with no extra principal (${basePayoffLabel}): about ${fmt(savedInt)} less interest and about ${savedY}y ${savedMoR}m shorter term (${payoffLabel}).`
+    : `Monthly P&I ${fmt(baseline.pmt)} with no extra principal: total interest about ${fmt(baseline.totalInterest)} through payoff ${basePayoffLabel} (${baseline.months} months).`;
   const insight =
     totalExtra > 0
-      ? `Extra principal entered: ${fmt(totalExtra)}. Versus scheduled payments only, interest drops by about ${fmt(savedInt)} and the loan ends about ${savedY} years and ${savedMoR} months sooner. Payoff shifts from ${basePayoffLabel} to ${payoffLabel}.`
+      ? `Extra principal entered: ${fmt(totalExtra)}. Versus the left column (${compareLeftHead.toLowerCase()}), interest is about ${fmt(savedInt)} lower and payoff is about ${savedY} years and ${savedMoR} months sooner (${basePayoffLabel} → ${payoffLabel}).`
       : insightNoExtras;
   const insightLines = doc.splitTextToSize(insight, doc.internal.pageSize.getWidth() - margin * 2);
   doc.text(insightLines, margin, y);
