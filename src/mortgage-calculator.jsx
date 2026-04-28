@@ -46,6 +46,12 @@ function formatYearsMonths(totalMonths) {
   return parts.join(" ");
 }
 
+/** Months sooner than baseline (positive = early payoff). */
+function formatPayoffAheadMonths(monthsAhead) {
+  if (monthsAhead <= 0) return "None — same as full term";
+  return `${formatYearsMonths(monthsAhead)} sooner`;
+}
+
 // ─── Amortization Engine ─────────────────────────────────────────────────────
 /** @typedef {'monthly'|'biweekly'} PaymentMode */
 /**
@@ -769,6 +775,44 @@ export default function App() {
           </div>
         </div>
 
+        {/* PROMINENT MONTHLY P&I */}
+        <div
+          style={{
+            ...cardStyle(),
+            marginBottom: 8,
+            textAlign: "center",
+            padding: isComfortable ? "28px 22px" : "22px 16px",
+            border: "2px solid var(--mc-border)",
+            background: "var(--mc-well)",
+          }}
+        >
+          <div style={{ fontSize: isComfortable ? 12 : 11, letterSpacing: "0.14em", color: "var(--mc-text-muted)", textTransform: "uppercase", marginBottom: 10 }}>
+            Your monthly P&amp;I payment
+          </div>
+          <div
+            style={{
+              fontSize: isComfortable ? 52 : 40,
+              fontWeight: 700,
+              color: "var(--mc-heading)",
+              fontFamily: "'DM Mono',monospace",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.05,
+            }}
+          >
+            {fmt(withExtra.pmt)}
+            <span style={{ fontSize: isComfortable ? 22 : 17, fontWeight: 600, color: "var(--mc-text-muted)", marginLeft: 6 }}>/mo</span>
+          </div>
+          {paymentMode === "biweekly" && withExtra.biweeklyHalfPayment != null && (
+            <div style={{ marginTop: 14, fontSize: isComfortable ? 15 : 13, color: "var(--mc-text-secondary)", lineHeight: 1.45 }}>
+              Biweekly half-payment:{" "}
+              <strong style={{ fontFamily: "'DM Mono',monospace", color: "var(--mc-text)" }}>{fmt(withExtra.biweeklyHalfPayment)}</strong>{" "}
+              every two weeks (same as about{" "}
+              <strong style={{ fontFamily: "'DM Mono',monospace", color: "var(--mc-text)" }}>{fmt(withExtra.scheduledMonthlyPI)}</strong>{" "}
+              /mo toward principal &amp; interest).
+            </div>
+          )}
+        </div>
+
         {/* PAYMENT FREQUENCY */}
         <div style={{ ...cardStyle(), marginBottom:8 }}>
           <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10 }}>Payment frequency</div>
@@ -862,13 +906,13 @@ export default function App() {
           <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr 1fr":"1fr",gap:8 }}>
             {[
               {
-                label: paymentMode === "biweekly" ? "Interest vs monthly, no extras" : "Interest vs baseline",
+                label: "Interest saved vs paying to full term",
                 val: fmt(savedInt),
                 color: "var(--mc-text)",
               },
               {
-                label: paymentMode === "biweekly" ? "Term vs monthly, no extras" : "Term vs baseline",
-                val: `${savedY}y ${savedMoR}m`,
+                label: "Early payoff vs full term",
+                val: formatPayoffAheadMonths(savedMo),
                 color: "var(--mc-text)",
               },
               { label: "Projected payoff", val: `${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color: "var(--mc-text)" },
@@ -885,9 +929,9 @@ export default function App() {
         <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr":"1fr",gap:8,marginBottom:8 }}>
           {[
             {
-              label:"No extra principal",
+              label:`Full ${term}-year term (no early payoff)`,
               rows: paymentMode==="biweekly"
-                ? [["Monthly P&I (baseline)",fmt(baselineNoExtra.pmt)],["Total interest",fmt(baselineNoExtra.totalInterest)],["Total paid",fmt(totalScheduledCashOut(baselineNoExtra))],["Payoff",`${term} yrs`]]
+                ? [["Monthly P&I (note)",fmt(baselineNoExtra.pmt)],["Total interest",fmt(baselineNoExtra.totalInterest)],["Total paid",fmt(totalScheduledCashOut(baselineNoExtra))],["Payoff",`${term} yrs`]]
                 : [["Monthly P&I",fmt(baselineNoExtra.pmt)],["Total interest",fmt(baselineNoExtra.totalInterest)],["Total paid",fmt(totalScheduledCashOut(baselineNoExtra))],["Payoff",`${term} yrs`]],
             },
             {

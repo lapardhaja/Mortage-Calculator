@@ -120,7 +120,7 @@ export function downloadMortgagePdf(p) {
   doc.text("Scenario comparison", margin, y);
   y += 14;
 
-  const compareLeftHead = isBiweekly ? "Monthly P&I, no extras" : "No extra payments";
+  const compareLeftHead = isBiweekly ? `Full ${term}-yr term (no early payoff)` : "No extra payments";
   const compareBody = [
     ["Total interest paid", fmt(baseline.totalInterest), fmt(withExtra.totalInterest)],
     ["Total cash out (incl. extra principal)", fmt(baselineCashOut), fmt(totalPaidWithExtra)],
