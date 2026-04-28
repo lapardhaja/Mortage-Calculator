@@ -237,7 +237,7 @@ function NumInput({ label, value, onDec, onInc, onChange, min, max, step, slider
             />
           </div>
         ) : (
-          <div onClick={startEdit} title="Tap to type a value"
+          <div onClick={startEdit} title="Click to enter a value"
             style={{ flex:1, textAlign:"center", fontSize:fs.val, fontWeight:700, color:"var(--mc-input-text)", fontVariantNumeric:"tabular-nums", letterSpacing:"-0.02em", cursor:"text", padding:comfortable?"12px 8px":"9px 5px", borderRadius:8, border:"1px solid transparent", transition:"border-color 0.15s" }}
             onMouseEnter={e=>{ e.currentTarget.style.borderColor = "var(--mc-border)"; }}
             onMouseLeave={e=>{ e.currentTarget.style.borderColor = "transparent"; }}>
@@ -373,6 +373,62 @@ export default function App() {
   }, [colorMode]);
   const isLight = colorMode === "light";
 
+  /** Segmented control (tabs, payment frequency) */
+  const segmentedBar = {
+    display: "flex",
+    gap: 4,
+    padding: 4,
+    borderRadius: 10,
+    border: "1px solid var(--mc-border)",
+    background: "var(--mc-well)",
+  };
+  const segmentedBtn = (active) => ({
+    flex: 1,
+    minWidth: 0,
+    padding: isComfortable ? "10px 14px" : "9px 12px",
+    borderRadius: 8,
+    border: "1px solid " + (active ? "var(--mc-border)" : "transparent"),
+    background: active ? "var(--mc-surface)" : "transparent",
+    color: active ? "var(--mc-text)" : "var(--mc-text-muted)",
+    fontSize: isComfortable ? 14 : 13,
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+    textTransform: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    touchAction: "manipulation",
+    boxShadow: active ? (isLight ? "0 1px 2px rgba(15,23,42,0.06)" : "0 1px 2px rgba(0,0,0,0.35)") : "none",
+    transition: "background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s",
+  });
+  const btnPrimary = {
+    padding: isComfortable ? "10px 16px" : "9px 14px",
+    borderRadius: 8,
+    border: "1px solid var(--mc-border)",
+    background: "var(--mc-surface)",
+    color: "var(--mc-text)",
+    fontSize: isComfortable ? 14 : 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    touchAction: "manipulation",
+  };
+  const btnDangerGhost = {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid var(--mc-border)",
+    background: "var(--mc-surface)",
+    color: "var(--mc-text-muted)",
+    fontSize: 18,
+    lineHeight: 1,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    touchAction: "manipulation",
+    fontFamily: "inherit",
+  };
+
   const totalMonths = term * 12;
 
   const [periods, setPeriods] = useState([{ id:1, fromAbs:1, toAbs:360, amount:3000 }]);
@@ -438,22 +494,6 @@ export default function App() {
     borderRadius: isComfortable ? 18 : 16,
     padding: isComfortable ? "22px 20px" : "18px 16px",
     ...ex,
-  });
-  const pillStyle = (active, color = "#38bdf8") => ({
-    padding: "8px 18px",
-    borderRadius: 99,
-    border: "none",
-    cursor: "pointer",
-    fontSize: 11,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    background: active ? color : "var(--mc-pill-bg)",
-    color: active ? "var(--mc-pill-active-fg)" : "var(--mc-pill-inactive-fg)",
-    fontWeight: active ? 700 : 400,
-    transition: "all 0.2s",
-    flexShrink: 0,
-    touchAction: "manipulation",
-    fontFamily: "inherit",
   });
   const chartSkin = useMemo(
     () =>
@@ -565,7 +605,7 @@ export default function App() {
           background:var(--mc-slider-thumb);
           box-shadow:0 0 0 3px var(--slider-color,#38bdf8), 0 2px 10px var(--mc-thumb-glow);
         }
-        button:active { transform:scale(0.94); }
+        button:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
         .scrollx { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
         .scrollx::-webkit-scrollbar { display:none; }
         .fade-in { animation:fadeUp 0.35s ease both; }
@@ -582,10 +622,10 @@ export default function App() {
         <div style={{ maxWidth:shellMax, margin:"0 auto" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:isWideLayout?"flex-start":"stretch", gap:10, flexDirection:isWideLayout?"row":"column" }}>
             <div style={{ display:"flex", alignItems:"center", gap:isComfortable?14:10 }}>
-              <div style={{ width:isComfortable?44:36,height:isComfortable?44:36,borderRadius:9,background:"linear-gradient(135deg,#0ea5e9,#10b981)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isComfortable?20:16,flexShrink:0 }}>🏠</div>
+              <div style={{ width:isComfortable?44:36,height:isComfortable?44:36,borderRadius:8,border:"1px solid var(--mc-border)",background:"var(--mc-surface)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isComfortable?13:12,fontWeight:700,color:"var(--mc-text-muted)",flexShrink:0,letterSpacing:"0.04em" }}>MC</div>
               <div>
-                <div style={{ fontSize:isComfortable?12:10,letterSpacing:"0.2em",color:"#38bdf8",textTransform:"uppercase" }}>Mortgage Intelligence</div>
-                <h1 style={{ margin:0,fontSize:isComfortable?32:isWideLayout?28:22,fontWeight:700,color:"var(--mc-heading)",letterSpacing:"-0.03em",lineHeight:1.2 }}>Payoff Calculator</h1>
+                <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.08em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Mortgage calculator</div>
+                <h1 style={{ margin:0,fontSize:isComfortable?32:isWideLayout?28:22,fontWeight:700,color:"var(--mc-heading)",letterSpacing:"-0.03em",lineHeight:1.2 }}>Payoff schedule</h1>
               </div>
             </div>
             <div style={{ display:"flex", flexDirection:isWideLayout?"row":"column", gap:8, flexShrink:0, width:isWideLayout?"auto":"100%" }}>
@@ -595,32 +635,30 @@ export default function App() {
                 aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
                 title={isLight ? "Dark mode" : "Light mode"}
                 style={{
-                  padding: isComfortable ? "11px 16px" : "9px 14px",
-                  borderRadius: 11,
-                  border: "1px solid var(--mc-border)",
-                  background: "var(--mc-surface)",
-                  color: "var(--mc-text)",
-                  fontSize: isComfortable ? 18 : 16,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minWidth: isWideLayout ? 48 : undefined,
-                  touchAction: "manipulation",
+                  ...btnPrimary,
+                  padding: isComfortable ? "10px 14px" : "9px 12px",
+                  minWidth: isWideLayout ? 88 : undefined,
+                  width: isWideLayout ? "auto" : "100%",
                 }}
               >
-                {isLight ? "🌙" : "☀️"}
+                {isLight ? "Dark" : "Light"}
               </button>
               <button onClick={handleExportPDF} disabled={pdfStatus==="generating"}
-                style={{ flexShrink:0,padding:isComfortable?"11px 18px":"9px 14px",borderRadius:11,border:"1px solid var(--mc-pdf-border)",background: pdfStatus==="generating"?(isLight?"#d1fae5":"#0f2820"):"var(--mc-pdf-bg)", color: pdfStatus==="done"?"#10b981":pdfStatus==="error"?"#ef4444":(isLight?"#059669":"#10b981"),fontSize:isComfortable?14:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all 0.2s",touchAction:"manipulation",width:isWideLayout?"auto":"100%" }}>
-                {pdfStatus==="generating" ? "⏳ Creating PDF…" : pdfStatus==="done" ? "✓ Downloaded" : pdfStatus==="error" ? "✗ Error" : "📄 Download PDF report"}
+                style={{
+                  ...btnPrimary,
+                  flexShrink: 0,
+                  width: isWideLayout ? "auto" : "100%",
+                  opacity: pdfStatus === "generating" ? 0.65 : 1,
+                  cursor: pdfStatus === "generating" ? "wait" : "pointer",
+                  borderColor: pdfStatus === "error" ? "#fecaca" : pdfStatus === "done" ? "#bbf7d0" : "var(--mc-border)",
+                  background: pdfStatus === "error" ? "var(--mc-pdf-msg-err)" : pdfStatus === "done" ? "var(--mc-pdf-msg-ok)" : "var(--mc-surface)",
+                }}>
+                {pdfStatus==="generating" ? "Building PDF…" : pdfStatus==="done" ? "PDF saved" : pdfStatus==="error" ? "Export failed" : "Download PDF"}
               </button>
             </div>
           </div>
-          {pdfMsg && <div style={{ marginTop:8,fontSize:12,color:pdfStatus==="error"?"#ef4444":"#10b981",padding:"6px 10px",background:pdfStatus==="error"?"var(--mc-pdf-msg-err)":"var(--mc-pdf-msg-ok)",borderRadius:8 }}>{pdfMsg}</div>}
-          <p style={{ margin:"8px 0 0",fontSize:isComfortable?15:13,color:"var(--mc-text-dim)" }}>Model extra payment windows · See your real payoff date · Tap values to type</p>
+          {pdfMsg && <div style={{ marginTop:8,fontSize:12,color:pdfStatus==="error"?"#ef4444":"var(--mc-text-secondary)",padding:"6px 10px",background:pdfStatus==="error"?"var(--mc-pdf-msg-err)":"var(--mc-well)",borderRadius:8,border:"1px solid var(--mc-border)" }}>{pdfMsg}</div>}
+          <p style={{ margin:"8px 0 0",fontSize:isComfortable?15:13,color:"var(--mc-text-dim)" }}>Set optional extra principal by month. Click any amount to type a value.</p>
         </div>
       </div>
 
@@ -670,13 +708,13 @@ export default function App() {
           <div>
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
               <span style={{ fontSize:isComfortable?10:9,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Down Payment</span>
-              <div style={{ display:"flex",background:"var(--mc-well)",borderRadius:8,padding:2,gap:2 }}>
-                {[["pct","%"],["dollar","$"]].map(([mode,lbl])=>(
-                  <button key={mode} onClick={()=>{
+              <div style={{ ...segmentedBar, width:isWideLayout?200:"100%", maxWidth:280 }}>
+                {[["pct","Percent"],["dollar","Dollar"]].map(([mode,lbl])=>(
+                  <button key={mode} type="button" onClick={()=>{
                     if (mode==="pct") syncDownFromPct(Math.round(downPct));
                     else syncDownFromDollar(Math.round((purchasePrice * downPct) / 100));
                     setDownMode(mode);
-                  }} style={{ padding:isComfortable?"6px 14px":"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:isComfortable?12:11,fontWeight:600,fontFamily:"inherit",touchAction:"manipulation",background:downMode===mode?"#38bdf8":"transparent",color:downMode===mode?"var(--mc-pill-active-fg)":"var(--mc-text-dim)",transition:"all 0.2s" }}>{lbl}</button>
+                  }} style={segmentedBtn(downMode===mode)}>{lbl}</button>
                 ))}
               </div>
             </div>
@@ -727,36 +765,20 @@ export default function App() {
 
         {/* PAYMENT FREQUENCY */}
         <div style={{ ...cardStyle(), marginBottom:8 }}>
-          <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10 }}>Payment Schedule</div>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>
+          <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10 }}>Payment frequency</div>
+          <div style={{ ...segmentedBar, flexDirection:isWideLayout?"row":"column" }}>
             {[
-              { id:"monthly", label:"Monthly", sub:"Once per month" },
-              { id:"biweekly", label:"Biweekly (accel.)", sub:"Half P&I every 2 wks ≈ 13th mo/yr" },
-            ].map(({id,label,sub})=>(
-              <button
-                key={id}
-                type="button"
-                onClick={()=>setPaymentMode(id)}
-                style={{
-                  ...pillStyle(paymentMode===id,"#10b981"),
-                  flex: isWideLayout ? "0 1 auto" : "1 1 45%",
-                  minWidth: isWideLayout ? 160 : 140,
-                  textAlign:"left",
-                  display:"flex",
-                  flexDirection:"column",
-                  alignItems:"flex-start",
-                  gap:4,
-                  padding:isComfortable?"12px 18px":"10px 14px",
-                }}
-              >
-                <span>{label}</span>
-                <span style={{ fontSize:isComfortable?11:10,letterSpacing:"normal",textTransform:"none",fontWeight:400,opacity:0.85,lineHeight:1.25,color:paymentMode===id?"var(--mc-pill-active-fg)":"var(--mc-text-dim)" }}>{sub}</span>
+              { id:"monthly", label:"Monthly" },
+              { id:"biweekly", label:"Biweekly" },
+            ].map(({id,label})=>(
+              <button key={id} type="button" onClick={()=>setPaymentMode(id)} style={segmentedBtn(paymentMode===id)}>
+                {label}
               </button>
             ))}
           </div>
           {paymentMode==="biweekly" && (
-            <div style={{ marginTop:12,padding:isComfortable?"11px 13px":"9px 11px",background:"var(--mc-well)",borderRadius:10,border:"1px solid #10b98133",fontSize:isComfortable?13:12,color:"var(--mc-text-secondary)",lineHeight:1.45 }}>
-              Contractual P&amp;I stays <strong style={{color:"#38bdf8",fontFamily:"'DM Mono',monospace" }}>{fmt(base.pmt)}/mo</strong>; biweekly plan pays <strong style={{color:"#10b981",fontFamily:"'DM Mono',monospace" }}>{fmt(base.biweeklyHalfPayment)}</strong> every two weeks (modeled as <strong style={{fontFamily:"'DM Mono',monospace" }}>{fmt(base.scheduledMonthlyPI)}</strong>/mo cash to principal &amp; interest).
+            <div style={{ marginTop:12,padding:isComfortable?"11px 13px":"9px 11px",background:"var(--mc-well)",borderRadius:8,border:"1px solid var(--mc-border)",fontSize:isComfortable?13:12,color:"var(--mc-text-secondary)",lineHeight:1.5 }}>
+              Scheduled payment remains <strong style={{ fontFamily:"'DM Mono',monospace", color:"var(--mc-text)" }}>{fmt(base.pmt)}/mo</strong> on the note. This view applies half that amount every two weeks, which is the same as paying about <strong style={{ fontFamily:"'DM Mono',monospace", color:"var(--mc-text)" }}>{fmt(base.scheduledMonthlyPI)}</strong> toward P&amp;I each month (26 half-payments per year).
             </div>
           )}
         </div>
@@ -768,10 +790,10 @@ export default function App() {
               <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Extra Payment Periods</div>
               <div style={{ fontSize:isComfortable?12:11,color:"var(--mc-text-arrow)",marginTop:2 }}>{periods.length} period{periods.length!==1?"s":""} · {fmt(totalExtra)} total extra</div>
             </div>
-            <button onClick={addPeriod} style={{ background:"linear-gradient(135deg,#0ea5e9,#10b981)",border:"none",color:"#fff",padding:isComfortable?"10px 16px":"8px 14px",borderRadius:10,fontSize:isComfortable?13:12,fontWeight:600,cursor:"pointer",touchAction:"manipulation",fontFamily:"inherit",whiteSpace:"nowrap",width:isWideLayout?"auto":"100%" }}>+ Add</button>
+            <button type="button" onClick={addPeriod} style={{ ...btnPrimary, whiteSpace:"nowrap", width:isWideLayout?"auto":"100%" }}>Add period</button>
           </div>
 
-          {periods.length===0 && <div style={{ textAlign:"center",padding:"16px 0",color:"var(--mc-text-arrow)",fontSize:isComfortable?14:13 }}>No extra payments — tap <strong style={{color:"#38bdf8"}}>+ Add</strong> to start saving.</div>}
+          {periods.length===0 && <div style={{ textAlign:"center",padding:"16px 0",color:"var(--mc-text-arrow)",fontSize:isComfortable?14:13 }}>No extra principal periods. Use <strong style={{color:"var(--mc-text)"}}>Add period</strong> to include one.</div>}
 
           <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
             {periods.map((p,idx)=>{
@@ -791,7 +813,7 @@ export default function App() {
                       <span style={{ fontSize:12,fontWeight:600,color:col.bg }}>Period {idx+1}</span>
                       <span style={{ fontSize:isComfortable?12:11,color:"var(--mc-text-dim)" }}>{dur} mo · {fmt(dur*p.amount)}</span>
                     </div>
-                    <button onClick={()=>delPeriod(p.id)} style={{ background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.25)",color:"#ef4444",width:28,height:28,borderRadius:7,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation" }}>×</button>
+                    <button type="button" aria-label="Remove period" onClick={()=>delPeriod(p.id)} style={btnDangerGhost}>×</button>
                   </div>
 
                   {/* Extra amount with type input */}
@@ -826,17 +848,16 @@ export default function App() {
           </div>
         </div>
 
-        {/* HERO SAVINGS */}
-        <div style={{ background:"var(--mc-hero-bg)",border:"1px solid var(--mc-hero-border)",borderRadius:18,padding:isComfortable?"24px 22px":"20px 18px",marginBottom:8,position:"relative",overflow:"hidden" }}>
-          <div style={{ position:"absolute",top:-20,right:-20,width:120,height:120,background:"radial-gradient(circle,rgba(16,185,129,0.15) 0%,transparent 70%)",pointerEvents:"none" }}/>
-          <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.18em",color:"#10b981",textTransform:"uppercase",marginBottom:14 }}>
-            {periods.length===0?"No periods configured":`Savings across ${periods.length} period${periods.length>1?"s":""}`}
+        {/* RESULT HIGHLIGHTS */}
+        <div style={{ background:"var(--mc-hero-bg)",border:"1px solid var(--mc-hero-border)",borderRadius:16,padding:isComfortable?"22px 20px":"18px 16px",marginBottom:8 }}>
+          <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.12em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:14 }}>
+            {periods.length===0 ? "Results (no extra principal)" : `Results · ${periods.length} extra period${periods.length>1?"s":""}`}
           </div>
           <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr 1fr":"1fr",gap:8 }}>
             {[
-              {label:"Interest Saved",val:fmt(savedInt),                                   color:"#10b981"},
-              {label:"Time Saved",    val:`${savedY}y ${savedMoR}m`,                       color:"#f59e0b"},
-              {label:"Payoff Date",   val:`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color:"#38bdf8"},
+              {label:"Interest vs baseline",val:fmt(savedInt),                                   color:"var(--mc-text)"},
+              {label:"Term vs baseline",    val:`${savedY}y ${savedMoR}m`,                       color:"var(--mc-text)"},
+              {label:"Projected payoff",   val:`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`, color:"var(--mc-text)"},
             ].map(({label,val,color})=>(
               <div key={label}>
                 <div style={{ fontSize:isComfortable?12:9,color:"var(--mc-text-muted)",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4 }}>{label}</div>
@@ -850,22 +871,20 @@ export default function App() {
         <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr":"1fr",gap:8,marginBottom:8 }}>
           {[
             {
-              label:"Without Extra",
-              color:"#ef4444",
+              label:"No extra principal",
               rows: paymentMode==="biweekly"
-                ? [["Cash to loan (equiv./mo)",fmt(base.scheduledMonthlyPI)],["Contract P&I (ref.)",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]]
-                : [["Monthly",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]],
+                ? [["Equiv. P&I / month",fmt(base.scheduledMonthlyPI)],["Scheduled P&I (note)",fmt(base.pmt)],["Total interest",fmt(base.totalInterest)],["Total paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]]
+                : [["Monthly P&I",fmt(base.pmt)],["Total interest",fmt(base.totalInterest)],["Total paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]],
             },
             {
-              label:"With Periods",
-              color:"#10b981",
+              label:"With extra principal",
               rows: paymentMode==="biweekly"
-                ? [["Cash to loan (equiv./mo)",fmt(withExtra.scheduledMonthlyPI)],["Contract P&I (ref.)",fmt(withExtra.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]]
-                : [["Base Pmt",fmt(withExtra.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]],
+                ? [["Equiv. P&I / month",fmt(withExtra.scheduledMonthlyPI)],["Scheduled P&I (note)",fmt(withExtra.pmt)],["Total interest",fmt(withExtra.totalInterest)],["Total paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]]
+                : [["Monthly P&I",fmt(withExtra.pmt)],["Total interest",fmt(withExtra.totalInterest)],["Total paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]],
             },
-          ].map(({label,color,rows})=>(
-            <div key={label} style={{ background:"var(--mc-compare-surface)",border:`1px solid ${color}28`,borderTop:`3px solid ${color}`,borderRadius:13,padding:isComfortable?"18px 16px":"14px 12px" }}>
-              <div style={{ fontSize:isComfortable?12:9,letterSpacing:"0.15em",color,textTransform:"uppercase",marginBottom:10,fontWeight:600 }}>{label}</div>
+          ].map(({label,rows})=>(
+            <div key={label} style={{ background:"var(--mc-compare-surface)",border:"1px solid var(--mc-border)",borderTop:"2px solid var(--mc-text-muted)",borderRadius:12,padding:isComfortable?"18px 16px":"14px 12px" }}>
+              <div style={{ fontSize:isComfortable?12:9,letterSpacing:"0.12em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10,fontWeight:600 }}>{label}</div>
               {rows.map(([k,v])=>(
                 <div key={k} style={{ display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:7 }}>
                   <span style={{ fontSize:isComfortable?13:11,color:"var(--mc-text-dim)" }}>{k}</span>
@@ -877,10 +896,17 @@ export default function App() {
         </div>
 
         {/* TABS */}
-        <div className="scrollx" style={{ display:"flex",gap:6,marginBottom:10,paddingBottom:2 }}>
-          {["Summary","Chart","Schedule"].map(v=>(
-            <button key={v} onClick={()=>setView(v.toLowerCase())} style={{ ...pillStyle(view===v.toLowerCase()), ...(isComfortable?{ fontSize:13, padding:"11px 24px" }:{}) , ...(!isWideLayout?{ padding:"10px 20px" }:{}) }}>{v}</button>
-          ))}
+        <div style={{ marginBottom:12 }}>
+          <div style={{ ...segmentedBar, maxWidth:isWideLayout?420:"none" }}>
+            {["Summary","Chart","Schedule"].map((v) => {
+              const id = v.toLowerCase();
+              return (
+                <button key={v} type="button" onClick={()=>setView(id)} style={segmentedBtn(view===id)}>
+                  {v}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── SUMMARY ── */}
@@ -897,7 +923,7 @@ export default function App() {
               return (
                 <div key={pct} style={{ marginBottom:14 }}>
                   <div style={{ display:"flex",justifyContent:"space-between",alignItems:isWideLayout?"baseline":"flex-start",marginBottom:5,gap:6,flexDirection:isWideLayout?"row":"column" }}>
-                    <span style={{ fontSize:isComfortable?14:12,color:"var(--mc-text)" }}>{pct===100?"🎉 Fully paid off":`${pct}% equity — ${fmt(principal*pct/100)}`}</span>
+                    <span style={{ fontSize:isComfortable?14:12,color:"var(--mc-text)" }}>{pct===100?"Loan paid off":`${pct}% of principal repaid · about ${fmt(principal*pct/100)}`}</span>
                     <span style={{ fontSize:11,color:"#10b981",whiteSpace:isWideLayout?"nowrap":"normal",fontFamily:"'DM Mono',monospace" }}>{MONTHS_SHORT[hitDate.month]} {hitDate.year}{saved>0?` (${saved}y early)`:""}</span>
                   </div>
                   <div style={{ height:6,background:"var(--mc-timeline-track)",borderRadius:99,overflow:"hidden" }}>
@@ -927,11 +953,11 @@ export default function App() {
               </div>
             )}
 
-            <div style={{ marginTop:16,padding:isComfortable?"15px 16px":"13px 14px",background:"var(--mc-well)",borderRadius:11,borderLeft:"3px solid #f59e0b" }}>
-              <div style={{ fontSize:isComfortable?10:9,color:"#f59e0b",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6 }}>Net Worth Impact</div>
+            <div style={{ marginTop:16,padding:isComfortable?"15px 16px":"13px 14px",background:"var(--mc-well)",borderRadius:10,border:"1px solid var(--mc-border)" }}>
+              <div style={{ fontSize:isComfortable?10:9,color:"var(--mc-text-muted)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6 }}>Interest and term</div>
               <div style={{ fontSize:isComfortable?14:12,color:"var(--mc-networth-body)",lineHeight:1.8 }}>
-                Extra payments save <strong style={{color:"#10b981"}}>{fmt(savedInt)}</strong> in interest and cut <strong style={{color:"#f59e0b"}}>{savedY}y {savedMoR}m</strong> off your mortgage.
-                {totalExtra>0&&savedInt>0&&<> Return on extra dollars paid: <strong style={{color:"#f59e0b"}}>{((savedInt/totalExtra)*100).toFixed(0)}%</strong>.</>}
+                Extra principal reduces interest by about <strong style={{color:"var(--mc-text)"}}>{fmt(savedInt)}</strong> and shortens the loan by <strong style={{color:"var(--mc-text)"}}>{savedY}y {savedMoR}m</strong> versus the baseline above.
+                {totalExtra>0&&savedInt>0&&<> Interest saved per dollar of extra principal: <strong style={{color:"var(--mc-text)"}}>{((savedInt/totalExtra)*100).toFixed(0)}%</strong>.</>}
               </div>
             </div>
           </div>
@@ -941,7 +967,7 @@ export default function App() {
         {view==="chart" && (
           <div className="fade-in" style={cardStyle()}>
             <div style={{ fontSize:isComfortable?13:11,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:2 }}>Balance Over Time</div>
-            <div style={{ fontSize:isComfortable?14:12,color:"var(--mc-text-arrow)",marginBottom:12 }}>Tap any point · shaded bands = active extra payment periods</div>
+            <div style={{ fontSize:isComfortable?14:12,color:"var(--mc-text-arrow)",marginBottom:12 }}>Select a year for balances and interest. Shaded bands show extra principal periods.</div>
             {(()=>{
               const W=isComfortable?720:600,H=isComfortable?300:260,PAD={t:14,r:14,b:isComfortable?40:36,l:isComfortable?78:68};
               const iW=W-PAD.l-PAD.r, iH=H-PAD.t-PAD.b;
@@ -987,7 +1013,7 @@ export default function App() {
               );
             })()}
             <div style={{ display:"flex",gap:14,flexWrap:"wrap",margin:"10px 0 10px" }}>
-              {[["#ef4444","No extra payments"],["#10b981","With extra periods"],["#10b98118","Active period window"]].map(([bg,txt])=>(
+              {[["#ef4444","Baseline (no extra principal)"],["#10b981","With extra principal"],["#10b98118","Extra principal window"]].map(([bg,txt])=>(
                 <div key={txt} style={{display:"flex",alignItems:"center",gap:5}}>
                   <div style={{width:20,height:3,borderRadius:2,background:bg,border:bg.includes("18")?"1px solid #10b98144":"none"}}/>
                   <span style={{fontSize:isComfortable?14:12,color:"var(--mc-text-muted)"}}>{txt}</span>
@@ -997,14 +1023,14 @@ export default function App() {
             {chartYear&&(
               <div style={{ background:"var(--mc-chart-detail-bg)",borderRadius:11,padding:isComfortable?18:14,border:"1px solid var(--mc-chart-detail-border)" }}>
                 <div style={{ fontSize:isComfortable?14:12,color:"#38bdf8",marginBottom:10,fontFamily:"'DM Mono',monospace" }}>
-                  YEAR {chartYear} · {mo2label((chartYear-1)*12+1)} → {mo2label(Math.min(chartYear*12,totalMonths))}{activeYears.has(chartYear)?" · 🟢 Extra active":""}
+                  Year {chartYear} · {mo2label((chartYear-1)*12+1)} – {mo2label(Math.min(chartYear*12,totalMonths))}{activeYears.has(chartYear)?" · Extra principal on":""}
                 </div>
                 <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr":"1fr",gap:10 }}>
                   {[
-                    {label:"Balance (no extra)",   val:yBase[chartYear]?.bal,    color:"#ef4444"},
-                    {label:"Balance (w/ periods)", val:yExtra[chartYear]?.bal??0, color:"#10b981"},
-                    {label:"Interest (no extra)",  val:yBase[chartYear]?.int,    color:"#ef4444"},
-                    {label:"Interest (w/ periods)",val:yExtra[chartYear]?.int??0, color:"#10b981"},
+                    {label:"Balance, baseline",   val:yBase[chartYear]?.bal,    color:"var(--mc-text)"},
+                    {label:"Balance, this scenario", val:yExtra[chartYear]?.bal??0, color:"var(--mc-text)"},
+                    {label:"Interest, baseline",  val:yBase[chartYear]?.int,    color:"var(--mc-text)"},
+                    {label:"Interest, this scenario",val:yExtra[chartYear]?.int??0, color:"var(--mc-text)"},
                   ].map(({label,val,color})=>(
                     <div key={label}>
                       <div style={{fontSize:isComfortable?12:9,color:"var(--mc-text-dim)",marginBottom:2,textTransform:"uppercase",letterSpacing:"0.1em"}}>{label}</div>
@@ -1022,7 +1048,7 @@ export default function App() {
           <div className="fade-in" style={{ background:"var(--mc-schedule-outer)",border:"1px solid var(--mc-border)",borderRadius:16,overflow:"hidden" }}>
             <div style={{ padding:isComfortable?"15px 16px":"13px 14px",borderBottom:"1px solid var(--mc-border)" }}>
               <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase" }}>Full Payment Schedule</div>
-              <div style={{ fontSize:isComfortable?12:11,color:"var(--mc-text-arrow)",marginTop:2 }}>🟢 Green = extra payment month · 🔵 Blue = year-end</div>
+              <div style={{ fontSize:isComfortable?12:11,color:"var(--mc-text-arrow)",marginTop:2 }}>Highlighted rows: extra principal in that month. Rule above row: calendar year-end.</div>
             </div>
             <div style={{ maxHeight:420,overflowY:"auto",overflowX:"auto",WebkitOverflowScrolling:"touch" }}>
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:isComfortable?14:12,minWidth:340,fontFamily:"'DM Mono',monospace" }}>
@@ -1041,12 +1067,12 @@ export default function App() {
                     return (
                       <tr key={row.month} className={isYE?"row-year":hasE?"row-extra":""}
                         style={isYE || hasE ? {} : { background: zebraBg }}>
-                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:isYE?"#38bdf8":hasE?"#10b981":"var(--mc-text-dim)",fontSize:isComfortable?11:10 }}>{MONTHS_SHORT[rowDate.month]} {rowDate.year}{isYE?" ★":""}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:isYE?"var(--mc-text)":hasE?"var(--mc-text-secondary)":"var(--mc-text-dim)",fontSize:isComfortable?11:10 }}>{MONTHS_SHORT[rowDate.month]} {rowDate.year}{isYE?" · Year-end":""}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text-secondary)" }}>{fmt(row.scheduledPI ?? base.pmt)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#38bdf8" }}>{fmt(row.principal)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#ef4444" }}>{fmt(row.interest)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:hasE?"#10b981":"var(--mc-text-arrow)",fontWeight:hasE?700:400 }}>{hasE?fmt(row.extra):"—"}</td>
-                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text)",fontWeight:row.balance===0?700:400 }}>{row.balance===0?"🎉 $0":fmt(row.balance)}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text)",fontWeight:row.balance===0?700:400 }}>{row.balance===0?"$0":fmt(row.balance)}</td>
                       </tr>
                     );
                   })}

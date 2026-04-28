@@ -92,14 +92,14 @@ export function downloadMortgagePdf(p) {
       ["Interest rate (annual)", `${rate}%`],
       ["Contract term", `${term} years`],
       ["First payment month", startLabel],
-      ["Payment schedule", isBiweekly ? "Biweekly (accelerated)" : "Monthly"],
+      ["Payment frequency", isBiweekly ? "Biweekly" : "Monthly"],
       ...(isBiweekly
         ? [
-            ["Contractual P&I (monthly)", fmt(base.pmt)],
-            ["Biweekly half-payment (ref.)", fmt(base.biweeklyHalfPayment)],
-            ["Cash to loan (equiv. / month)", fmt(baseScheduled)],
+            ["Scheduled P&I (note, monthly)", fmt(base.pmt)],
+            ["Half-payment every two weeks", fmt(base.biweeklyHalfPayment)],
+            ["Equivalent P&I applied / month", fmt(baseScheduled)],
           ]
-        : [["Scheduled P&I payment", fmt(base.pmt)]]),
+        : [["Scheduled P&I (monthly)", fmt(base.pmt)]]),
     ],
     theme: "striped",
     headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: "bold" },
@@ -280,11 +280,11 @@ export function downloadMortgagePdf(p) {
   doc.setFontSize(9);
   doc.setTextColor(51, 65, 85);
   const insightNoExtras = isBiweekly
-    ? `Biweekly (accelerated) plan: contractual P&I ${fmt(base.pmt)}/mo, cash to loan modeled as ${fmt(baseScheduled)}/mo equivalent with no extras — about ${fmt(base.totalInterest)} interest through payoff ${basePayoffLabel} (${base.months} months).`
-    : `Scheduled payment ${fmt(base.pmt)}/month with no extras: about ${fmt(base.totalInterest)} interest through payoff ${basePayoffLabel} (${base.months} months).`;
+    ? `Biweekly frequency: scheduled P&I remains ${fmt(base.pmt)}/mo on the note; this report applies about ${fmt(baseScheduled)}/mo toward P&I with no extra principal. Total interest about ${fmt(base.totalInterest)} through payoff ${basePayoffLabel} (${base.months} months).`
+    : `Monthly P&I ${fmt(base.pmt)} with no extra principal: total interest about ${fmt(base.totalInterest)} through payoff ${basePayoffLabel} (${base.months} months).`;
   const insight =
     totalExtra > 0
-      ? `You plan to pay ${fmt(totalExtra)} in extra principal. That removes ${fmt(savedInt)} of interest versus scheduled payments only and shortens the loan by ${savedY} years and ${savedMoR} months. Payoff moves from ${basePayoffLabel} to ${payoffLabel}.`
+      ? `Extra principal entered: ${fmt(totalExtra)}. Versus scheduled payments only, interest drops by about ${fmt(savedInt)} and the loan ends about ${savedY} years and ${savedMoR} months sooner. Payoff shifts from ${basePayoffLabel} to ${payoffLabel}.`
       : insightNoExtras;
   const insightLines = doc.splitTextToSize(insight, doc.internal.pageSize.getWidth() - margin * 2);
   doc.text(insightLines, margin, y);
