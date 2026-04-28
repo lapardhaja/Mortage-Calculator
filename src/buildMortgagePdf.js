@@ -34,6 +34,7 @@ export function downloadMortgagePdf(p) {
     principal,
     rate,
     term,
+    paymentMode = "monthly",
     startYear,
     startMonth,
     payoffDate,
@@ -46,13 +47,17 @@ export function downloadMortgagePdf(p) {
     totalExtra,
   } = p;
 
+  const isBiweekly = paymentMode === "biweekly";
+  const baseScheduled = base.scheduledMonthlyPI ?? base.pmt;
+  const withScheduled = withExtra.scheduledMonthlyPI ?? withExtra.pmt;
+
   const startLabel = `${MONTHS[startMonth]} ${startYear}`;
   const payoffLabel = `${MONTHS[payoffDate.month]} ${payoffDate.year} (${formatYearsMonths(withExtra.months)})`;
   const basePayoff = absMonthToDate(base.months, startYear, startMonth + 1);
   const basePayoffLabel = `${MONTHS[basePayoff.month]} ${basePayoff.year} (${formatYearsMonths(base.months)})`;
   const roi = totalExtra > 0 ? ((savedInt / totalExtra) * 100).toFixed(0) : "0";
   const termActual = `${Math.floor(withExtra.months / 12)}y ${withExtra.months % 12}m`;
-  const totalPaidWithExtra = base.pmt * withExtra.months + totalExtra;
+  const totalPaidWithExtra = withScheduled * withExtra.months + totalExtra;
 
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const margin = 48;
@@ -87,7 +92,14 @@ export function downloadMortgagePdf(p) {
       ["Interest rate (annual)", `${rate}%`],
       ["Contract term", `${term} years`],
       ["First payment month", startLabel],
-      ["Scheduled P&I payment", fmt(base.pmt)],
+      ["Payment schedule", isBiweekly ? "Biweekly (accelerated)" : "Monthly"],
+      ...(isBiweekly
+        ? [
+            ["Contractual P&I (monthly)", fmt(base.pmt)],
+            ["Biweekly half-payment (ref.)", fmt(base.biweeklyHalfPayment)],
+            ["Cash to loan (equiv. / month)", fmt(baseScheduled)],
+          ]
+        : [["Scheduled P&I payment", fmt(base.pmt)]]),
     ],
     theme: "striped",
     headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: "bold" },
@@ -105,7 +117,7 @@ export function downloadMortgagePdf(p) {
 
   const compareBody = [
     ["Total interest paid", fmt(base.totalInterest), fmt(withExtra.totalInterest)],
-    ["Total cash out (incl. extra principal)", fmt(base.pmt * base.months), fmt(totalPaidWithExtra)],
+    ["Total cash out (incl. extra principal)", fmt(baseScheduled * base.months), fmt(totalPaidWithExtra)],
     ["Extra principal paid", "—", fmt(totalExtra)],
     ["Payoff date", basePayoffLabel, payoffLabel],
     ["Loan duration", `${term} y (${base.months} mo)`, `${termActual} (${withExtra.months} mo)`],
@@ -205,7 +217,7 @@ export function downloadMortgagePdf(p) {
     const d = absMonthToDate(r.month, startYear, startMonth + 1);
     return [
       `${MONTHS[d.month]} ${d.year}`,
-      fmt(base.pmt),
+      fmt(r.scheduledPI ?? baseScheduled),
       fmt(r.principal),
       fmt(r.interest),
       r.extra > 0 ? fmt(r.extra) : "—",
@@ -235,7 +247,7 @@ export function downloadMortgagePdf(p) {
     .slice(0, 45)
     .map((r) => [
       `Year ${r.year}`,
-      fmt(base.pmt),
+      fmt(r.scheduledPI ?? baseScheduled),
       fmt(r.principal),
       fmt(r.interest),
       r.extra > 0 ? fmt(r.extra) : "—",
@@ -267,10 +279,13 @@ export function downloadMortgagePdf(p) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(51, 65, 85);
+  const insightNoExtras = isBiweekly
+    ? `Biweekly (accelerated) plan: contractual P&I ${fmt(base.pmt)}/mo, cash to loan modeled as ${fmt(baseScheduled)}/mo equivalent with no extras — about ${fmt(base.totalInterest)} interest through payoff ${basePayoffLabel} (${base.months} months).`
+    : `Scheduled payment ${fmt(base.pmt)}/month with no extras: about ${fmt(base.totalInterest)} interest through payoff ${basePayoffLabel} (${base.months} months).`;
   const insight =
     totalExtra > 0
       ? `You plan to pay ${fmt(totalExtra)} in extra principal. That removes ${fmt(savedInt)} of interest versus scheduled payments only and shortens the loan by ${savedY} years and ${savedMoR} months. Payoff moves from ${basePayoffLabel} to ${payoffLabel}.`
-      : `Scheduled payment ${fmt(base.pmt)}/month with no extras: about ${fmt(base.totalInterest)} interest through payoff ${basePayoffLabel} (${base.months} months).`;
+      : insightNoExtras;
   const insightLines = doc.splitTextToSize(insight, doc.internal.pageSize.getWidth() - margin * 2);
   doc.text(insightLines, margin, y);
   y += insightLines.length * 12 + 14;

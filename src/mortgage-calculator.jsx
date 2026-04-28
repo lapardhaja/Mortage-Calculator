@@ -47,17 +47,24 @@ function formatYearsMonths(totalMonths) {
 }
 
 // ─── Amortization Engine ─────────────────────────────────────────────────────
-function computeAmortization(principal, annualRate, termYears, periods = []) {
+/** @typedef {'monthly'|'biweekly'} PaymentMode */
+/**
+ * Biweekly (accelerated): half the contractual monthly P&I every 2 weeks.
+ * Modeled on monthly accrual as paying 13/12 of the monthly P&I each month
+ * (≈ 26 half-payments per year vs 24) — common lender/calculator simplification.
+ */
+function computeAmortization(principal, annualRate, termYears, periods = [], paymentMode = "monthly") {
   const r   = annualRate / 100 / 12;
   const n   = termYears * 12;
   const pmt = (principal * r * Math.pow(1+r,n)) / (Math.pow(1+r,n) - 1);
+  const scheduledMonthlyPI = paymentMode === "biweekly" ? pmt * (13 / 12) : pmt;
   let bal = principal, totalInt = 0, month = 0;
   const schedule = [];
   while (bal > 0.01 && month < n) {
     month++;
     const interest = bal * r;
     const extra    = periods.reduce((s,p) => month>=p.from && month<=p.to ? s+p.amount : s, 0);
-    let   prin     = pmt - interest + extra;
+    let   prin     = scheduledMonthlyPI - interest + extra;
     if (prin > bal) prin = bal;
     bal      -= prin;
     totalInt += interest;
@@ -65,12 +72,25 @@ function computeAmortization(principal, annualRate, termYears, periods = []) {
       month, year: Math.ceil(month/12),
       interest: Math.round(interest),
       principal: Math.round(prin - extra),
-      extra: Math.round(Math.min(extra, prin + extra - (pmt - interest))),
+      extra: Math.round(Math.min(extra, prin + extra - (scheduledMonthlyPI - interest))),
       balance: Math.max(0, Math.round(bal)),
       totalInterest: Math.round(totalInt),
+      scheduledPI: Math.round(scheduledMonthlyPI),
     });
   }
-  return { schedule, totalInterest: totalInt, months: month, pmt };
+  return {
+    schedule,
+    totalInterest: totalInt,
+    months: month,
+    pmt,
+    paymentMode,
+    scheduledMonthlyPI,
+    biweeklyHalfPayment: paymentMode === "biweekly" ? pmt / 2 : null,
+  };
+}
+
+function totalScheduledCashOut(amort) {
+  return amort.scheduledMonthlyPI * amort.months;
 }
 
 const PERIOD_COLORS = [
@@ -332,6 +352,7 @@ export default function App() {
 
   const [rate,      setRate]      = useState(5.5);
   const [term,      setTerm]      = useState(30);
+  const [paymentMode, setPaymentMode] = useState("monthly"); // "monthly" | "biweekly"
   const [view,      setView]      = useState("summary");
   const [chartYear, setChartYear] = useState(null);
 
@@ -365,8 +386,8 @@ export default function App() {
     amount:p.amount,
   })),[periods,totalMonths]);
 
-  const base      = useMemo(()=>computeAmortization(principal,rate,term,[]),            [principal,rate,term]);
-  const withExtra = useMemo(()=>computeAmortization(principal,rate,term,clampedPeriods),[principal,rate,term,clampedPeriods]);
+  const base      = useMemo(()=>computeAmortization(principal,rate,term,[],paymentMode),            [principal,rate,term,paymentMode]);
+  const withExtra = useMemo(()=>computeAmortization(principal,rate,term,clampedPeriods,paymentMode),[principal,rate,term,clampedPeriods,paymentMode]);
 
   const savedInt   = Math.round(base.totalInterest - withExtra.totalInterest);
   const savedMo    = base.months - withExtra.months;
@@ -387,7 +408,7 @@ export default function App() {
   const yBase  = useMemo(()=>rollup(base.schedule),      [base]);
   const yExtra = useMemo(()=>rollup(withExtra.schedule),  [withExtra]);
   const years  = Array.from({length:term},(_,i)=>i+1);
-  const totalWithExtra = base.pmt*withExtra.months + totalExtra;
+  const totalWithExtra = totalScheduledCashOut(withExtra) + totalExtra;
 
   const activeYears = useMemo(()=>{
     const s=new Set();
@@ -470,6 +491,7 @@ export default function App() {
         principal,
         rate,
         term,
+        paymentMode,
         startYear,
         startMonth,
         payoffDate,
@@ -703,6 +725,42 @@ export default function App() {
           </div>
         </div>
 
+        {/* PAYMENT FREQUENCY */}
+        <div style={{ ...cardStyle(), marginBottom:8 }}>
+          <div style={{ fontSize:isComfortable?11:10,letterSpacing:"0.15em",color:"var(--mc-text-muted)",textTransform:"uppercase",marginBottom:10 }}>Payment Schedule</div>
+          <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>
+            {[
+              { id:"monthly", label:"Monthly", sub:"Once per month" },
+              { id:"biweekly", label:"Biweekly (accel.)", sub:"Half P&I every 2 wks ≈ 13th mo/yr" },
+            ].map(({id,label,sub})=>(
+              <button
+                key={id}
+                type="button"
+                onClick={()=>setPaymentMode(id)}
+                style={{
+                  ...pillStyle(paymentMode===id,"#10b981"),
+                  flex: isWideLayout ? "0 1 auto" : "1 1 45%",
+                  minWidth: isWideLayout ? 160 : 140,
+                  textAlign:"left",
+                  display:"flex",
+                  flexDirection:"column",
+                  alignItems:"flex-start",
+                  gap:4,
+                  padding:isComfortable?"12px 18px":"10px 14px",
+                }}
+              >
+                <span>{label}</span>
+                <span style={{ fontSize:isComfortable?11:10,letterSpacing:"normal",textTransform:"none",fontWeight:400,opacity:0.85,lineHeight:1.25,color:paymentMode===id?"var(--mc-pill-active-fg)":"var(--mc-text-dim)" }}>{sub}</span>
+              </button>
+            ))}
+          </div>
+          {paymentMode==="biweekly" && (
+            <div style={{ marginTop:12,padding:isComfortable?"11px 13px":"9px 11px",background:"var(--mc-well)",borderRadius:10,border:"1px solid #10b98133",fontSize:isComfortable?13:12,color:"var(--mc-text-secondary)",lineHeight:1.45 }}>
+              Contractual P&amp;I stays <strong style={{color:"#38bdf8",fontFamily:"'DM Mono',monospace" }}>{fmt(base.pmt)}/mo</strong>; biweekly plan pays <strong style={{color:"#10b981",fontFamily:"'DM Mono',monospace" }}>{fmt(base.biweeklyHalfPayment)}</strong> every two weeks (modeled as <strong style={{fontFamily:"'DM Mono',monospace" }}>{fmt(base.scheduledMonthlyPI)}</strong>/mo cash to principal &amp; interest).
+            </div>
+          )}
+        </div>
+
         {/* EXTRA PAYMENT PERIODS */}
         <div style={{ ...cardStyle(), marginBottom:8 }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:isWideLayout?"center":"stretch",marginBottom:12,flexDirection:isWideLayout?"row":"column",gap:isWideLayout?0:10 }}>
@@ -791,8 +849,20 @@ export default function App() {
         {/* COMPARE */}
         <div style={{ display:"grid",gridTemplateColumns:isWideLayout?"1fr 1fr":"1fr",gap:8,marginBottom:8 }}>
           {[
-            {label:"Without Extra",color:"#ef4444",rows:[["Monthly",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(base.pmt*base.months)],["Payoff",`${term} yrs`]]},
-            {label:"With Periods", color:"#10b981",rows:[["Base Pmt",fmt(base.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]]},
+            {
+              label:"Without Extra",
+              color:"#ef4444",
+              rows: paymentMode==="biweekly"
+                ? [["Cash to loan (equiv./mo)",fmt(base.scheduledMonthlyPI)],["Contract P&I (ref.)",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]]
+                : [["Monthly",fmt(base.pmt)],["Total Interest",fmt(base.totalInterest)],["Total Paid",fmt(totalScheduledCashOut(base))],["Payoff",`${term} yrs`]],
+            },
+            {
+              label:"With Periods",
+              color:"#10b981",
+              rows: paymentMode==="biweekly"
+                ? [["Cash to loan (equiv./mo)",fmt(withExtra.scheduledMonthlyPI)],["Contract P&I (ref.)",fmt(withExtra.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]]
+                : [["Base Pmt",fmt(withExtra.pmt)],["Total Interest",fmt(withExtra.totalInterest)],["Total Paid",fmt(totalWithExtra)],["Payoff",`${MONTHS_SHORT[payoffDate.month]} ${payoffDate.year} · ${payoffDurationLabel}`]],
+            },
           ].map(({label,color,rows})=>(
             <div key={label} style={{ background:"var(--mc-compare-surface)",border:`1px solid ${color}28`,borderTop:`3px solid ${color}`,borderRadius:13,padding:isComfortable?"18px 16px":"14px 12px" }}>
               <div style={{ fontSize:isComfortable?12:9,letterSpacing:"0.15em",color,textTransform:"uppercase",marginBottom:10,fontWeight:600 }}>{label}</div>
@@ -972,7 +1042,7 @@ export default function App() {
                       <tr key={row.month} className={isYE?"row-year":hasE?"row-extra":""}
                         style={isYE || hasE ? {} : { background: zebraBg }}>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:isYE?"#38bdf8":hasE?"#10b981":"var(--mc-text-dim)",fontSize:isComfortable?11:10 }}>{MONTHS_SHORT[rowDate.month]} {rowDate.year}{isYE?" ★":""}</td>
-                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text-secondary)" }}>{fmt(base.pmt)}</td>
+                        <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"var(--mc-text-secondary)" }}>{fmt(row.scheduledPI ?? base.pmt)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#38bdf8" }}>{fmt(row.principal)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:"#ef4444" }}>{fmt(row.interest)}</td>
                         <td style={{ padding:isComfortable?"8px 10px":"7px 9px",textAlign:"right",color:hasE?"#10b981":"var(--mc-text-arrow)",fontWeight:hasE?700:400 }}>{hasE?fmt(row.extra):"—"}</td>
